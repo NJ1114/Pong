@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+canvas {
+   	border: 1px solid black;
+    background-color: black;
+}
+</style>
+</head>
+<body onload="startPong()">
+<script>
+var addpointtome = 0;
+var addpointtocom = 0;
+
+function startPong() {
+	PongArea.start();
+    //width, height, color, x-pos, y-pos
+	compaddle = new component(11, 80, "white", 12, 225);
+    //player is on right paddle
+    mepaddle = new component(11, 80, "white", 876, 225);
+    ball = new component(15, 15, "white", 443, 256);
+    mescore = new component("32px", "Verdana", "white", 480, 52, "text");
+    comscore = new component("32px", "Verdana", "white", 398, 52, "text");
+}
+
+var PongArea = {
+	canvas : document.createElement("canvas"),
+	start : function() {
+		this.canvas.width = 900;
+		this.canvas.height = 564;
+		this.context = this.canvas.getContext("2d");
+        //node follows DOM tree structure
+		document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        //calls function continuously
+        this.interval = setInterval(updatePongArea, 30);
+        //when key is pressed
+        window.addEventListener('keydown', function(e) {
+        	PongArea.key = event.keyCode;
+        })
+        //when key is let go or not pressed down anymore
+        window.addEventListener('keyup', function(e) {
+        	PongArea.key = false;
+        })
+	},
+    clear : function() {
+    	//think of it like film/stop motion
+    	this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+}
+
+//game objects
+function component (width, height, color, x, y, type){
+	this.type = type;
+	this.width = width;
+    this.height = height;
+    this.x = x;
+    this.y = y;
+    this.speedX = 0;
+    this.speedY = 0;
+    //velocity is speed + direction
+    this.dx = 0;
+    this.dy = 0;
+    this.update = function() {
+    	ctx = PongArea.context;
+        if (this.type == "text") {
+      		ctx.font = this.width + " " + this.height;
+      		ctx.fillStyle = color;
+      		ctx.fillText(this.text, this.x, this.y);
+    	} else {
+        ctx.fillStyle = color;
+    	ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
+    	//net
+   		ctx.beginPath();
+    	ctx.setLineDash([5, 15]);
+		ctx.moveTo(450, 0);
+		ctx.lineTo(450, 564);
+		ctx.strokeStyle = "white";
+		ctx.stroke();
+    }
+    this.newPos = function() {
+    	this.x += this.speedX;
+        this.y += this.speedY;
+    }
+    //crashing with paddles
+	this.crashWith = function(obj) {
+			var myleft = this.x;
+			var myright = this.x + (this.width);
+			var mytop = this.y;
+			var mybottom = this.y + (this.height);
+			var objleft = obj.x;
+			var objright = obj.x + (obj.width);
+			var objtop = obj.y;
+			var objbottom = obj.y + (obj.height);
+			var crash = true;
+				if ((mybottom < objtop) || (mytop > objbottom) || (myright < objleft) || (myleft > objright)) {
+					crash = false;
+				}
+				return crash;
+			}
+}
+//updates the game (clear is so movement doesn't leave a trail)
+function updatePongArea() {
+	PongArea.clear();
+    
+    //ball movement
+    ball.speedX = 5;
+        //ISSUE: ball keeps going through paddle
+    	if (ball.crashWith(mepaddle)) {
+        	ball.speedX = 2;
+        }
+    	if (ball.x > 888) {
+        	ball.x = 443;
+            addpointtocom += 1;
+        }
+        if (ball.x < 0) {
+        	ball.x = 443;
+            addpointtome += 1;
+        }
+    ball.newPos();
+    ball.update();
+    
+    
+    //compaddle controls - w=87 & s83
+    compaddle.speedY = 0;
+    if (PongArea.key && PongArea.key == 87) {compaddle.speedY = -4;}
+    if (PongArea.key && PongArea.key == 83) {compaddle.speedY = 4;}
+    compaddle.newPos();
+    compaddle.update();
+    //mepaddle controls - up=38 & down=40 arrows
+    mepaddle.speedY = 0;
+    if (PongArea.key && PongArea.key == 38) {mepaddle.speedY = -4;}
+    if (PongArea.key && PongArea.key == 40) {mepaddle.speedY = 4;}
+    mepaddle.newPos();
+    mepaddle.update(); 
+    //Scores
+    mescore.text = addpointtome;
+    mescore.update();
+    comscore.text = addpointtocom;
+    comscore.update();
+}
+</script>
+
+</body>
+</html>
